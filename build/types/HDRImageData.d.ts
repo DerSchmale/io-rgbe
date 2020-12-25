@@ -1,7 +1,10 @@
+/**
+ * HDRImageData contains all decompressed image data.
+ */
 export declare class HDRImageData {
     width: number;
     height: number;
     exposure: number;
     gamma: number;
-    array: Float32Array;
+    data: Float32Array;
 }

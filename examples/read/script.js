@@ -59,7 +59,7 @@ function onExposureChange(value)
 
 function updateImage()
 {
-    const data = hdri.array;
+    const data = hdri.data;
     const tgt = new Uint8ClampedArray(data.length / 3 * 4);
     const gamma = 1.0 / 2.2;
 

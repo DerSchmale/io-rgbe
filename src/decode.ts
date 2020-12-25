@@ -1,5 +1,8 @@
 import { HDRImageData } from "./HDRImageData";
 
+/**
+ * @ignore
+ */
 type Header = {
 	width: number,
 	height: number,
@@ -10,13 +13,16 @@ type Header = {
 	flipY: boolean
 };
 
+/**
+ * @ignore
+ */
 type DataStream = {
 	offset: number,
 	data: DataView
 };
 
 /**
- * Parses
+ * Decodes RGBE-encoded data to a flat list of floating point pixel data (RGB).
  * @param data A DataView object containing the RGBE data.
  */
 export function decodeRGBE(data: DataView): HDRImageData
@@ -33,10 +39,13 @@ export function decodeRGBE(data: DataView): HDRImageData
 		height: header.height,
 		exposure: header.exposure,
 		gamma: header.gamma,
-		array: parseData(stream, header)
+		data: parseData(stream, header)
 	};
 }
 
+/**
+ * @ignore
+ */
 function parseHeader(stream: DataStream): Header
 {
 	let line = readLine(stream);
@@ -83,6 +92,9 @@ function parseHeader(stream: DataStream): Header
 	return header;
 }
 
+/**
+ * @ignore
+ */
 function parseSize(label: string, value: number, header: Header)
 {
 	switch (label) {
@@ -104,6 +116,9 @@ function parseSize(label: string, value: number, header: Header)
 	}
 }
 
+/**
+ * @ignore
+ */
 function readLine(stream: DataStream): string
 {
 	let ch, str = "";
@@ -114,6 +129,9 @@ function readLine(stream: DataStream): string
 	return str;
 }
 
+/**
+ * @ignore
+ */
 function parseData(stream: DataStream, header: Header): Float32Array
 {
 	let hash = stream.data.getUint16(stream.offset);
@@ -131,6 +149,9 @@ function parseData(stream: DataStream, header: Header): Float32Array
 	return data;
 }
 
+/**
+ * @ignore
+ */
 function parseNewRLE(stream: DataStream, header: Header): Float32Array
 {
 	const { width, height, colorCorr } = header;
@@ -156,7 +177,7 @@ function parseNewRLE(stream: DataStream, header: Header): Float32Array
 			let value = data.getUint8(offset++);
 			if (value > 128) {
 				// RLE:
-				let len = value - 128;
+				const len = value - 128;
 				value = data.getUint8(offset++);
 				for (let rle = 0; rle < len; ++rle) {
 					comps[x++] = value;
@@ -187,6 +208,9 @@ function parseNewRLE(stream: DataStream, header: Header): Float32Array
 	return tgt;
 }
 
+/**
+ * @ignore
+ */
 function swap(data: Float32Array, i1: number, i2: number)
 {
 	i1 *= 3;
@@ -199,6 +223,9 @@ function swap(data: Float32Array, i1: number, i2: number)
 	}
 }
 
+/**
+ * @ignore
+ */
 function flipX(data: Float32Array, header: Header)
 {
 	const { width, height } = header;
@@ -216,6 +243,9 @@ function flipX(data: Float32Array, header: Header)
 	}
 }
 
+/**
+ * @ignore
+ */
 function flipY(data: Float32Array, header: Header)
 {
 	const { width, height } = header;

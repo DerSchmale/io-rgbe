@@ -1,3 +1,6 @@
+/**
+ * HDRImageData contains all decompressed image data.
+ */
 var HDRImageData = /** @class */ (function () {
     function HDRImageData() {
     }
@@ -5,7 +8,7 @@ var HDRImageData = /** @class */ (function () {
 }());
 
 /**
- * Parses
+ * Decodes RGBE-encoded data to a flat list of floating point pixel data (RGB).
  * @param data A DataView object containing the RGBE data.
  */
 function decodeRGBE(data) {
@@ -19,9 +22,12 @@ function decodeRGBE(data) {
         height: header.height,
         exposure: header.exposure,
         gamma: header.gamma,
-        array: parseData(stream, header)
+        data: parseData(stream, header)
     };
 }
+/**
+ * @ignore
+ */
 function parseHeader(stream) {
     var line = readLine(stream);
     var header = {
@@ -61,6 +67,9 @@ function parseHeader(stream) {
     parseSize(parts[2], parseInt(parts[3]), header);
     return header;
 }
+/**
+ * @ignore
+ */
 function parseSize(label, value, header) {
     switch (label) {
         case "+X":
@@ -80,12 +89,18 @@ function parseSize(label, value, header) {
             break;
     }
 }
+/**
+ * @ignore
+ */
 function readLine(stream) {
     var ch, str = "";
     while ((ch = stream.data.getUint8(stream.offset++)) !== 0x0a)
         str += String.fromCharCode(ch);
     return str;
 }
+/**
+ * @ignore
+ */
 function parseData(stream, header) {
     var hash = stream.data.getUint16(stream.offset);
     var data;
@@ -101,6 +116,9 @@ function parseData(stream, header) {
     }
     return data;
 }
+/**
+ * @ignore
+ */
 function parseNewRLE(stream, header) {
     var width = header.width, height = header.height, colorCorr = header.colorCorr;
     var tgt = new Float32Array(width * height * 3);
@@ -144,9 +162,11 @@ function parseNewRLE(stream, header) {
             tgt[i++] = b * e * colorCorr[2];
         }
     }
-    console.log(offset, stream.data.byteLength);
     return tgt;
 }
+/**
+ * @ignore
+ */
 function swap(data, i1, i2) {
     i1 *= 3;
     i2 *= 3;
@@ -156,6 +176,9 @@ function swap(data, i1, i2) {
         data[i2 + i] = tmp;
     }
 }
+/**
+ * @ignore
+ */
 function flipX(data, header) {
     var width = header.width, height = header.height;
     var hw = width >> 1;
@@ -170,6 +193,9 @@ function flipX(data, header) {
         }
     }
 }
+/**
+ * @ignore
+ */
 function flipY(data, header) {
     var width = header.width, height = header.height;
     var hh = height >> 1;
@@ -184,4 +210,109 @@ function flipY(data, header) {
     }
 }
 
-export { HDRImageData, decodeRGBE };
+/**
+ * Encodes the HDRImageData or ImageData (LDR) to the RGBE file format.
+ */
+function encodeRGBE(imageData) {
+    var hdriData = imageData instanceof ImageData ? convertToHDRIData(imageData) : imageData;
+    var width = hdriData.width, height = hdriData.height, data = hdriData.data;
+    var encoded = [];
+    var header = "#?RADIANCE\n# Made with derschmale/io-rgbe\n" +
+        "EXPOSURE=" + hdriData.exposure + "\n" +
+        "GAMMA=" + hdriData.gamma + "\n" +
+        "PRIMARIES=0 0 0 0 0 0 0 0\nFORMAT=32-bit_rle_rgbe\n\n";
+    header += "-Y " + height + " +X " + width + "\n";
+    for (var i_1 = 0; i_1 < header.length; ++i_1) {
+        encoded.push(header.charCodeAt(i_1));
+    }
+    var i = 0;
+    for (var y = 0; y < height; ++y) {
+        // 0x0202 and 16-bit for width
+        encoded.push(0x02, 0x02, (width & 0xff00) >> 8, width & 0xff);
+        var scanline = [[], [], [], []];
+        for (var x = 0; x < width; ++x) {
+            // gamma to linear
+            var r = data[i++];
+            var g = data[i++];
+            var b = data[i++];
+            var maxComp = Math.max(r, g, b) / 256.0;
+            var e = clamp(Math.ceil(Math.log2(maxComp)) + 136, 0.0, 0xff);
+            var sc = 1.0 / Math.pow(2, e - 136);
+            scanline[0].push(clamp(r * sc, 0, 0xff));
+            scanline[1].push(clamp(g * sc, 0, 0xff));
+            scanline[2].push(clamp(b * sc, 0, 0xff));
+            scanline[3].push(e);
+        }
+        scanline.forEach(function (s) { return encodeRLE(s, encoded); });
+    }
+    return new Uint8Array(encoded).buffer;
+}
+/**
+ * @ignore
+ */
+function convertToHDRIData(img) {
+    var data = new Float32Array(img.width * img.height * 3);
+    for (var i = 0, j = 0; i < data.length; i += 3, j += 4) {
+        data[i] = Math.pow(img.data[j] / 0xff, 2.2);
+        data[i + 1] = Math.pow(img.data[j + 1] / 0xff, 2.2);
+        data[i + 2] = Math.pow(img.data[j + 2] / 0xff, 2.2);
+    }
+    return {
+        data: data,
+        exposure: 1,
+        gamma: 1,
+        width: img.width,
+        height: img.height
+    };
+}
+/**
+ * @ignore
+ */
+function clamp(x, min, max) {
+    return Math.max(Math.min(x, max), min);
+}
+/**
+ * Straight port from https://www.graphics.cornell.edu/~bjw/rgbe/rgbe.c
+ * @ignore
+ */
+function encodeRLE(data, encoded) {
+    var minRunLen = 4;
+    var len = data.length;
+    var i = 0;
+    while (i < len) {
+        var runStart = i;
+        // find next run of length at least 4 if one exists
+        var runCount = 0;
+        var prevRunCount = 0;
+        while ((runCount < minRunLen) && (runStart < len)) {
+            runStart += runCount;
+            prevRunCount = runCount;
+            runCount = 1;
+            while ((runStart + runCount < len) && (runCount < 127)
+                && (data[runStart] == data[runStart + runCount]))
+                runCount++;
+        }
+        // if data before next big run is a short run then write it as such
+        if ((prevRunCount > 1) && (prevRunCount == runStart - i)) {
+            encoded.push(128 + prevRunCount, data[i]);
+            i = runStart;
+        }
+        // write out bytes until we reach the start of the next run
+        while (i < runStart) {
+            var count = runStart - i;
+            if (count > 128)
+                count = 128;
+            encoded.push(count);
+            for (var d = 0; d < count; ++d)
+                encoded.push(data[i + d]);
+            i += count;
+        }
+        /* write out next run if one was found */
+        if (runCount >= minRunLen) {
+            encoded.push(128 + runCount, data[runStart]);
+            i += runCount;
+        }
+    }
+}
+
+export { HDRImageData, decodeRGBE, encodeRGBE };
