@@ -1,6 +1,6 @@
 {
   "name": "@derschmale/io-rgbe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "build/io-rgbe.js",
   "module": "build/io-rgbe.module.js",
   "types": "build/types/main.d.ts",
