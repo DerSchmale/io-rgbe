@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IO-RGBE: RGBE Loading</title>
+    <script src="script.js" type="module"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body id="rootBody">
+<div id="startContainer" class="vAlignContainer">
+    <div class="vAligned">
+        <p>Drop a .hdr file to load it</p>
+    </div>
+</div>
+
+<div id="progress" class="vAlignContainer hidden">
+    <div id="progressBar" class="vAligned">
+        <div id="progressText">Loading...</div>
+        <div class="progressBorder">
+            <div id="progressProgress" class="progressProgress">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="endContainer" class="vAlignContainer hidden">
+    <div class="vAligned">
+        <canvas id="image" />
+    </div>
+</div>
+
+<div id="errorContainer" class="vAlignContainer hidden">
+    <div class="vAligned">
+        <h1>Sorry!</h1>
+        <p id="errorMessage"></p>
+    </div>
+</div>
+
+<div class="header">
+    <h1>IO-RGBE: Irradiance HDR loader</h1>
+    <p>
+        <a href="https://github.com/DerSchmale/io-rgbe">io-rgbe on Github</a><br/>
+        Made by <a href="http://www.derschmale.com">David Lenaerts</a>
+    </p>
+    <p>
+        Exposure:<br/>
+        <input type="range" min="0" max="5" value="1" class="slider" id="exposureRange" step="0.01">
+    </p>
+</div>
+</body>
+</html>
