@@ -1,4 +1,4 @@
-var TYMP = (function (exports) {
+var RGBE = (function (exports) {
 	'use strict';
 
 	/**

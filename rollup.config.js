@@ -8,12 +8,12 @@ export default [{
         {
             file: "build/io-rgbe.js",
             format: "iife",
-            name: "TYMP" // the global which can be used in a browser
+            name: "RGBE" // the global which can be used in a browser
         },
         {
             file: "build/io-rgbe.min.js",
             format: "iife",
-            name: "TYMP", // the global which can be used in a browser
+            name: "RGBE", // the global which can be used in a browser
             plugins: [terser()]
         },
         {
