@@ -7,8 +7,8 @@ export function encodeRGBE(imageData: HDRImageData | ImageData): ArrayBuffer
 {
 	const hdriData: HDRImageData = imageData instanceof ImageData ? convertToHDRIData(imageData) : imageData;
 	const { width, height, data } = hdriData;
-    const encoded: number[] = [];
-    const hasAlpha = data.length === width * height * data.BYTES_PER_ELEMENT * 4;
+	const encoded: number[] = [];
+	const hasAlpha = data.length === width * height * data.BYTES_PER_ELEMENT * 4;
 
 	let header =
 		"#?RADIANCE\n# Made with derschmale/io-rgbe\n" +
@@ -34,9 +34,9 @@ export function encodeRGBE(imageData: HDRImageData | ImageData): ArrayBuffer
 			// gamma to linear
 			const r = data[i++];
 			const g = data[i++];
-            const b = data[i++];
-            // skip alpha channel if present
-            if (hasAlpha) i++;
+			const b = data[i++];
+			// skip alpha channel if present
+			if (hasAlpha) i++;
 
 			const maxComp = Math.max(r, g, b) / 256.0;
 			const e = clamp(Math.ceil(Math.log2(maxComp)) + 136, 0.0, 0xff);
